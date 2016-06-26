@@ -171,7 +171,8 @@ df <- licences %>%
   complete(cog2, Federation, fill = list(valeur = 0)) %>% 
   left_join(RP2012_CS, c("cog2" = "CODGEO")) %>% 
   left_join(RP2012_AGE, c("cog2" = "CODGEO")) %>% 
-  left_join(RP2012_SEXE, c("cog2" = "CODGEO"))
+  left_join(RP2012_SEXE, c("cog2" = "CODGEO")) %>% 
+  mutate(habitants = femmes + hommes)
 modele_general <- glmer(valeur ~ `agriculteurs exploitants` +  `artisans, commerçants, chefs entreprise` + `autres personnes sans activité professionnelle` + `cadres et professions intellectuelles supérieures`+ `employés` + `ouvriers` + `professions intermédiaires` +  `retraités` + `15 à 19 ans` + `20 à 24 ans` + `25 à 29 ans` + `30 à 34 ans` + `35 à 39 ans` + `40 à 44 ans` + `45 à 49 ans` + `50 à 54 ans` + `55 à 59 ans` + `60 à 64 ans` + `65 ans ou plus` + `femmes` + `hommes` + (1 + `agriculteurs exploitants` + `artisans, commerçants, chefs entreprise` + `autres personnes sans activité professionnelle` + `cadres et professions intellectuelles supérieures`+ `employés` + `ouvriers` + `professions intermédiaires` +  `retraités` + `15 à 19 ans` + `20 à 24 ans` + `25 à 29 ans` + `30 à 34 ans` + `35 à 39 ans` + `40 à 44 ans` + `45 à 49 ans` + `50 à 54 ans` + `55 à 59 ans` + `60 à 64 ans` + `65 ans ou plus` + `femmes` + `hommes` | Federation), data = df, family = poisson(link = "identity"))
   
 ```
