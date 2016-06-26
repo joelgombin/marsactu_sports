@@ -1,0 +1,4 @@
+import	$	$<-	as.character	c	library	names<-	read_csv2
+calculs	!=	%>%	arrange	as.character	as.integer	c	cog2	fed_2012	fede	Federation	filter	foot	gather	group_by	left_join	Legende	licences	mean	mutate	Nombre de licences	Nom_Colonne	percent_rank	pop	poph_75_99_2010	Population communale 2010	select	sport	spread	spread_	sum	summarise	ungroup	Unisport	valeur	variable	variables
+barplot_surreprésentées	<	>	!=	%>%	aes	arrange	as.character	as.integer	c	cog2	coord_flip	element_blank	factor	fed_2012	fede	Federation	filter	gather	geom_bar	geom_text	ggplot	group_by	ifelse	left_join	Legende	library	licences	mutate	Nombre de licences	Nom_Colonne	percentile	percent_rank	pop	poph_75_99_2010	Population communale 2010	position_dodge	prop	rev	scale_colour_manual	select	spread	theme	theme_bw	ungroup	unique	Unisport	valeur	variable	variables
+unnamed-chunk-1	

@@ -1,0 +1,178 @@
+---
+title: "Marseille, capitale des sports... mais lesquels ?"
+author: "Joël Gombin"
+date: "17 juin 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = FALSE,
+                      message = FALSE,
+                      warning = FALSE,
+                      error = TRUE,
+                      cache=TRUE, 
+                      autodep=TRUE)
+```
+
+Alors que nous sommes en plein Euro de football, et trois ans après que Marseille ait été capitale européenne de la Culture, Marseille commence déjà à penser à son statut de [Capitale européenne des sports](https://marsactu.fr/bref/marseille-sera-capitale-europeenne-du-sport-en-2017/), dont elle bénéficiera en 2017. Ainsi, notre ville sera sous les projecteurs, et mettra en valeur les sports. Mais, de quels sports au juste Marseille porrait-elle bien être la capitale ?
+
+Le football est bien sûr le premier sport à venir en tête. C'est sans doute vrai au niveau de l'élite : l'Olympique de Marseille est évidemment intimement lié à l'identité de la ville, comme l'ont montré jadis [Christian Bromberger](https://books.google.fr/books?id=zSkUCwAAQBAJ&dq=football+marseille&hl=fr&lr=) et naguère [Ludovic Lestrelin](http://www.theses.fr/2006ROUEL542). Pourtant, comme l'avait déjà montré @[matamix](https://twitter.com/matamix) [dans un article chez nos confrères de Slate.fr](http://www.slate.fr/france/78502/carte-france-football-amateur), la pratique amateur du football est assez faible à Marseille, comme dans le sud-est de la France en général. Certes, c'est en football qu'il y a, à Marseille comme au plan national, le plus de licenciés amateurs, mais cela ne représente que 1,8 % de la population marseillaise. Marseille est même dans le quart des communes qui comptent le moins de licenciés de football. 
+
+De manière générale, d'ailleurs, Marseille n'est pas véritablement une ville sportive. Si on cumule toutes les licences sportives délivrées par des fédérations pour lesquelles le ministère des sports diffuse des données (ce qui ne concerne malheureusement pas toutes les fédérations : ainsi, on n'a pas les chiffres de la fédération de rugby), Marseille est dans le 35e percentile des communes comptant le moins de licenciés sportifs (c'est-à-dire que 65 % des communes comptent proportionnellement plus de licenciés que Marseille). 
+
+Il y a pourtant des sports pour lesquels la pratique amateur est importante, à Marseille. Si on laisse de côté les fédérations multisports (Union nationale des clubs universitaires, Fédération sportive des ASPTT, FF du sport universitaire), plus représentées dans les grandes villes, on constate que les points forts de Marseille sont avant tout la voile (plus de 7000 licenciés), les pêcheurs en mer (fédération dont le siège est d'ailleurs [situé à Marseille](http://www.ffpm-national.com/), 1149 licenciés marseillais), puis le... golf. Derrière, même si on trouve certains sports locaux (la pétanque et le jeu provençal) ou liés à la mer (sauvetage et secourisme, sports sous-marins, aviron, joutes et sauvetage nautique, natation), toutes les pratiques sportives sont à peine au-dessus ou en-dessous de la pratique médiane des communes françaises. Marseille n'est décidément pas une grande ville de pratique sportive -- même s'il faut nuancer en rappellant qu'on ne s'intéresse ici qu'à la pratique en club : point besoin d'être licencié pour faire un footing sur la corniche, faire une randonnée à Marseilleveyre ou aller nager dans les calanques. 
+
+
+
+```{r import, include=FALSE}
+
+library(readr)
+licences <- read_csv2("./licences.csv")
+fede <- read_csv2("./federations.csv")
+names(fede) <- c("Code", "Federation", "Unisport")
+fede$Code <- as.character(fede$Code)
+variables <- read_csv2("./variables.csv")
+names(variables) <- c("Nom_Colonne", "TypeRubrique", "Longueur", "Legende")
+
+library(dplyr) 
+library(tidyr)
+
+```
+
+```{r calculs, eval = FALSE}
+
+licences %>% 
+  mutate(fed_2012 = as.character(fed_2012)) %>% 
+  left_join(fede, by = c("fed_2012" = "Code")) %>% 
+  gather(variable, valeur, fed_2012:poph_75_99_2010) %>% 
+  left_join(variables %>% select(Nom_Colonne, Legende), by = c("variable" = "Nom_Colonne")) %>% 
+  filter(variable != "fed_2012") %>% 
+  select(-variable) %>% 
+  # filter(cog2 %in% "13055") %>% 
+  filter(Federation  %in% "FF de football") %>% 
+  filter(Legende %in% c("Population communale 2010", "Nombre de licences")) %>% 
+  spread_("Legende", "valeur") %>% 
+  mutate(licences = as.integer(`Nombre de licences`), pop = as.integer(`Population communale 2010`)) %>% 
+  mutate(foot = licences / pop * 100) %>% 
+  mutate(rang = percent_rank(foot)) %>% 
+  filter(cog2 %in% "13055")
+# 1,8 % de licenciés en foot, percentile = 20
+  
+licences %>% 
+  mutate(fed_2012 = as.character(fed_2012)) %>% 
+  left_join(fede, by = c("fed_2012" = "Code")) %>%
+  filter(Unisport %in% "unisport") %>% 
+  gather(variable, valeur, fed_2012:poph_75_99_2010) %>% 
+  left_join(variables %>% select(Nom_Colonne, Legende), by = c("variable" = "Nom_Colonne")) %>% 
+  filter(variable != "fed_2012") %>% 
+  select(-variable) %>% 
+  filter(cog2 %in% "13055") %>% 
+  filter(Legende %in% c("Population communale 2010", "Nombre de licences")) %>% 
+  spread(Legende, valeur) %>% 
+  mutate(licences = as.integer(`Nombre de licences`), pop = as.integer(`Population communale 2010`)) %>% 
+  mutate(sport = licences / pop * 100) %>% 
+  arrange(-sport)
+# derrière le foot, le tennis, puis voile, puis pétanque, puis judo, golf, équitation, handball, karaté, natation
+
+licences %>%   
+  mutate(fed_2012 = as.character(fed_2012)) %>% 
+  left_join(fede, by = c("fed_2012" = "Code")) %>% 
+  gather(variable, valeur, fed_2012:poph_75_99_2010) %>% 
+  left_join(variables %>% select(Nom_Colonne, Legende), by = c("variable" = "Nom_Colonne")) %>% 
+  filter(variable != "fed_2012") %>% 
+  select(-variable) %>% 
+  group_by(cog2) %>% 
+  filter(Legende %in% c("Population communale 2010", "Nombre de licences")) %>% 
+  spread_("Legende", "valeur") %>% 
+  mutate(licences = as.integer(`Nombre de licences`), pop = as.integer(`Population communale 2010`)) %>% 
+  summarise(licences = sum(licences, na.rm = TRUE) / mean(pop, na.rm = TRUE) * 100) %>% 
+  ungroup %>% 
+  mutate(percentile = percent_rank(licences)) %>% 
+  filter(cog2 %in% "13055")
+## percentile : 35e
+
+
+
+```
+
+```{r barplot_surreprésentées, out.height=1200, out.width=600, fig.width = 7, fig.height = 14, dpi=150, fig.cap="*Représentation relative de chaque fédération sportive à Marseille par rapport aux autres communes françaises. Le chiffre indiqué est le percentile : ainsi, 82 % des communes françaises comptent une proportion moins élevée de licenciés de voile que Marseille ; 98 % des communes comptent une proportion plus élevée de licenciés de cyclotourisme que Marseille.*"}
+
+library(ggplot2)
+
+# sessionInfo() pour debug
+
+licences %>% 
+  mutate(fed_2012 = as.character(fed_2012)) %>% 
+  left_join(fede, by = c("fed_2012" = "Code")) %>% 
+  filter(Unisport %in% "unisport") %>% 
+  gather(variable, valeur, fed_2012:poph_75_99_2010) %>% 
+  left_join(variables %>% select(Nom_Colonne, Legende), by = c("variable" = "Nom_Colonne")) %>% 
+  filter(variable != "fed_2012") %>% 
+  select(-variable) %>% 
+  filter(`Legende` %in% c("Population communale 2010", "Nombre de licences")) %>% 
+  mutate(variable = Legende) %>% 
+  select(-Legende) %>% 
+  spread(variable, valeur) %>% 
+  mutate(licences = as.integer(`Nombre de licences`), pop = as.integer(`Population communale 2010`)) %>% 
+  mutate(prop = licences / pop * 100) %>% 
+  group_by(Federation) %>% 
+  mutate(percentile = percent_rank(prop) * 100) %>% 
+  ungroup %>% 
+  filter(cog2 %in% "13055") %>% 
+  arrange(-percentile) %>% 
+  mutate(Federation = factor(Federation, levels = rev(unique(Federation)))) %>% 
+  ggplot(aes(x = Federation, y = percentile)) +
+  geom_bar(stat = "identity", fill = "#29586F") +
+  geom_text(aes(x = Federation, y = percentile + ifelse(percentile < 40, 1, -1), ymax = percentile, label = Federation, hjust = ifelse(percentile > 40, 1, 0), colour = ifelse(percentile < 40, "#29586F", "white")), position = position_dodge(width = 1), hjust = "inward") +
+  scale_colour_manual(values = c("#29586F" = "#29586F", "white" = "white"), guide = "none") +
+  coord_flip() +
+  theme_bw() +
+  theme(axis.title.y = element_blank(), axis.text.y=element_blank(), axis.ticks.y = element_blank(), panel.grid.major.y = element_blank())
+# voile, pecheurs en mer, golf, tennis, sauvetage et secourisme, pétanque, études et sports sous-marins, boxe française, karaté, tir
+
+```
+
+
+Peut-être toutefois que comparer toutes les communes entre elles n'a pas de sens. Leur taille est très différente, leur composition (par âge, par sexe, par catégorie socio-professionnel...). Qu'en est-il alors si on cherche à contrôler ces facteurs, et à regarder ce qu'il en est de la pratique sportivce (licenciée) à Marseille "toutes choses égales par ailleurs", comme disent les économistes ? 
+
+```{r modele}
+
+load("/media/Data/Dropbox/Thèse/données propres/RP2012/RP2012_POP6_comm.Rdata")
+
+RP2012_CS <- RP2012_POP6_comm %>% 
+  filter(!is.na(CODGEO)) %>% 
+  group_by(CODGEO, CS1_8) %>% 
+  summarise(NB = sum(NB)) %>% 
+  spread(CS1_8, NB)
+
+RP2012_AGE <- RP2012_POP6_comm %>% 
+  filter(!is.na(CODGEO)) %>% 
+  group_by(CODGEO, AGEQ65) %>% 
+  summarise(NB = sum(NB)) %>% 
+  spread(AGEQ65, NB)
+
+RP2012_SEXE <- RP2012_POP6_comm %>% 
+  filter(!is.na(CODGEO)) %>% 
+  group_by(CODGEO, SEXE) %>% 
+  summarise(NB = sum(NB)) %>% 
+  spread(SEXE, NB)
+
+library(lme4)
+
+df <- licences %>% 
+  mutate(fed_2012 = as.character(fed_2012)) %>% 
+  left_join(fede, by = c("fed_2012" = "Code")) %>% 
+  filter(Unisport %in% "unisport") %>% 
+  gather(variable, valeur, fed_2012:poph_75_99_2010) %>% 
+  left_join(variables %>% select(Nom_Colonne, Legende), by = c("variable" = "Nom_Colonne")) %>% 
+  filter(variable == "l_2012") %>% 
+  select(cog2, Federation, valeur) %>% 
+  mutate(valeur = as.integer(valeur)) %>% 
+  complete(cog2, Federation, fill = list(valeur = 0)) %>% 
+  left_join(RP2012_CS, c("cog2" = "CODGEO")) %>% 
+  left_join(RP2012_AGE, c("cog2" = "CODGEO")) %>% 
+  left_join(RP2012_SEXE, c("cog2" = "CODGEO"))
+modele_general <- glmer(valeur ~ `agriculteurs exploitants` +  `artisans, commerçants, chefs entreprise` + `autres personnes sans activité professionnelle` + `cadres et professions intellectuelles supérieures`+ `employés` + `ouvriers` + `professions intermédiaires` +  `retraités` + `15 à 19 ans` + `20 à 24 ans` + `25 à 29 ans` + `30 à 34 ans` + `35 à 39 ans` + `40 à 44 ans` + `45 à 49 ans` + `50 à 54 ans` + `55 à 59 ans` + `60 à 64 ans` + `65 ans ou plus` + `femmes` + `hommes` + (1 + `agriculteurs exploitants` + `artisans, commerçants, chefs entreprise` + `autres personnes sans activité professionnelle` + `cadres et professions intellectuelles supérieures`+ `employés` + `ouvriers` + `professions intermédiaires` +  `retraités` + `15 à 19 ans` + `20 à 24 ans` + `25 à 29 ans` + `30 à 34 ans` + `35 à 39 ans` + `40 à 44 ans` + `45 à 49 ans` + `50 à 54 ans` + `55 à 59 ans` + `60 à 64 ans` + `65 ans ou plus` + `femmes` + `hommes` | Federation), data = df, family = poisson(link = "identity"))
+  
+```
+
